@@ -19,17 +19,28 @@ export default class TicketService {
   }
 
   purchaseTickets(accountId, ...ticketTypeRequests) {
-    // throws InvalidPurchaseException
-
-    const ticketCounts = {
-      ADULT: 0,
-      CHILD: 0,
-      INFANT: 0,
-    };
-
-    // Validate account ID and ticket type requests
+    
     this.#validateAccountId(accountId);
+    this.#validateTicketRequests(ticketTypeRequests);
 
+    const ticketCounts = this.#countTickets(ticketTypeRequests);
+    this.#validateTicketTotals(ticketCounts);
+
+    const totalAmount = this.#calculateTotalAmount(ticketCounts);
+    const totalSeats = this.#calculateTotalSeats(ticketCounts);
+
+    this.#ticketPaymentService.makePayment(accountId, totalAmount);
+    this.#seatReservationService.reserveSeat(accountId, totalSeats);
+  }
+
+  // Private method to validate account ID
+  #validateAccountId(accountId) {
+    if (!Number.isInteger(accountId) || accountId <= 0) {
+      throw new InvalidPurchaseException(`Invalid account ID: ${accountId}`);
+    }
+  }
+
+  #validateTicketRequests(ticketTypeRequests) {
     if (!ticketTypeRequests || ticketTypeRequests.length === 0) {
       throw new InvalidPurchaseException(
         "At least one ticket must be purchased."
@@ -43,54 +54,57 @@ export default class TicketService {
       ) {
         throw new InvalidPurchaseException("Invalid TicketTypeRequest object.");
       }
+    }
+  }
 
+  #countTickets(ticketTypeRequests) {
+    const counts = {
+      ADULT: 0,
+      CHILD: 0,
+      INFANT: 0,
+    };
+
+    for (const req of ticketTypeRequests) {
       const type = req.getTicketType();
       const count = req.getNoOfTickets();
 
-      if (!Object.prototype.hasOwnProperty.call(ticketCounts, type)) {
+      if (!Object.prototype.hasOwnProperty.call(counts, type)) {
         throw new InvalidPurchaseException(`Unrecognized ticket type: ${type}`);
       }
 
-      ticketCounts[type] += count;
+      counts[type] += count;
     }
 
-    if (
-      ticketCounts.ADULT === 0 &&
-      (ticketCounts.CHILD > 0 || ticketCounts.INFANT > 0)
-    ) {
-      throw new InvalidPurchaseException(
-        "Child or Infant tickets require at least one Adult ticket."
-      );
-    }
+    return counts;
+  }
 
-    const totalTickets =
-      ticketCounts.ADULT + ticketCounts.CHILD + ticketCounts.INFANT;
+  #validateTicketTotals(counts) {
+    const totalTickets = counts.ADULT + counts.CHILD + counts.INFANT;
+
     if (totalTickets > 20) {
       throw new InvalidPurchaseException(
         "Cannot purchase more than 20 tickets."
       );
     }
 
-    if (ticketCounts.INFANT > ticketCounts.ADULT) {
+    if (counts.ADULT === 0 && (counts.CHILD > 0 || counts.INFANT > 0)) {
+      throw new InvalidPurchaseException(
+        "Child or Infant tickets require at least one Adult ticket."
+      );
+    }
+
+    if (counts.INFANT > counts.ADULT) {
       throw new InvalidPurchaseException(
         "Each infant must be accompanied by one adult."
       );
     }
-
-    const totalAmount = ticketCounts.ADULT * 25 + ticketCounts.CHILD * 15;
-    const totalSeats = ticketCounts.ADULT + ticketCounts.CHILD;
-
-    // External service call: payment
-    this.#ticketPaymentService.makePayment(accountId, totalAmount);
-
-    // External service call: seat reservation
-    this.#seatReservationService.reserveSeat(accountId, totalSeats);
   }
 
-  // Private method to validate account ID
-  #validateAccountId(accountId) {
-    if (!Number.isInteger(accountId) || accountId <= 0) {
-      throw new InvalidPurchaseException(`Invalid account ID: ${accountId}`);
-    }
+  #calculateTotalAmount(counts) {
+    return counts.ADULT * 25 + counts.CHILD * 15;
+  }
+
+  #calculateTotalSeats(counts) {
+    return counts.ADULT + counts.CHILD;
   }
 }
