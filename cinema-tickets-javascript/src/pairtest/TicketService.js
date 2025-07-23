@@ -1,4 +1,3 @@
-import TicketTypeRequest from "./lib/TicketTypeRequest.js";
 import InvalidPurchaseException from "./lib/InvalidPurchaseException.js";
 import TicketPaymentService from "../thirdparty/paymentgateway/TicketPaymentService.js";
 import SeatReservationService from "../thirdparty/seatbooking/SeatReservationService.js";
@@ -22,18 +21,36 @@ export default class TicketService {
   purchaseTickets(accountId, ...ticketTypeRequests) {
     // throws InvalidPurchaseException
 
-    // Validate account ID and ticket type requests
-    this.#validateAccountId(accountId);
-
     const ticketCounts = {
       ADULT: 0,
       CHILD: 0,
       INFANT: 0,
     };
 
+    // Validate account ID and ticket type requests
+    this.#validateAccountId(accountId);
+
+    if (!ticketTypeRequests || ticketTypeRequests.length === 0) {
+      throw new InvalidPurchaseException(
+        "At least one ticket must be purchased."
+      );
+    }
+
     for (const req of ticketTypeRequests) {
+      if (
+        typeof req?.getTicketType !== "function" ||
+        typeof req?.getNoOfTickets !== "function"
+      ) {
+        throw new InvalidPurchaseException("Invalid TicketTypeRequest object.");
+      }
+
       const type = req.getTicketType();
       const count = req.getNoOfTickets();
+
+      if (!Object.prototype.hasOwnProperty.call(ticketCounts, type)) {
+        throw new InvalidPurchaseException(`Unrecognized ticket type: ${type}`);
+      }
+
       ticketCounts[type] += count;
     }
 
@@ -63,7 +80,10 @@ export default class TicketService {
     const totalAmount = ticketCounts.ADULT * 25 + ticketCounts.CHILD * 15;
     const totalSeats = ticketCounts.ADULT + ticketCounts.CHILD;
 
+    // External service call: payment
     this.#ticketPaymentService.makePayment(accountId, totalAmount);
+
+    // External service call: seat reservation
     this.#seatReservationService.reserveSeat(accountId, totalSeats);
   }
 

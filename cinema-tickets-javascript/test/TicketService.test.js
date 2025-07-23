@@ -77,7 +77,6 @@ test("throws error when ticket totals exceed max limit", () => {
 });
 
 test("throws error when there are more infants than adults", () => {
-
   const ticketService = new TicketService(
     mockTicketPaymentService,
     mockSeatReservationService
@@ -91,5 +90,16 @@ test("throws error when there are more infants than adults", () => {
   expect(() => ticketService.purchaseTickets(1, ...requests)).toThrow(
     InvalidPurchaseException
   );
-  
+});
+
+test("throws error when no tickets are requested", () => {
+    
+  const ticketService = new TicketService(
+    mockTicketPaymentService,
+    mockSeatReservationService
+  );
+
+  expect(() => ticketService.purchaseTickets(1)).toThrow(
+    InvalidPurchaseException
+  );
 });
