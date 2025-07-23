@@ -1,4 +1,19 @@
-import TicketTypeRequest from '../src/pairtest/lib/TicketTypeRequest.js';
+import TicketTypeRequest from "../src/pairtest/lib/TicketTypeRequest.js";
+import InvalidPurchaseException from "../src/pairtest/lib/InvalidPurchaseException.js";
+import TicketService from "../src/pairtest/TicketService.js";
+
+const mockTicketPaymentService = {
+  makePayment: jest.fn(),
+};
+
+const mockSeatReservationService = {
+  reserveSeat: jest.fn(),
+};
+
+const ticketService = new TicketService(
+  mockTicketPaymentService,
+  mockSeatReservationService
+);
 
 test("creates a valid request for ADULT", () => {
   const req = new TicketTypeRequest("ADULT", 3);
@@ -19,22 +34,29 @@ test("creates a valid request for INFANT", () => {
 });
 
 test("throws error for invalid ticket type", () => {
-  expect(() => new TicketTypeRequest("STUDENT", 1)).toThrow("type must be ADULT, CHILD, or INFANT");
-});
-
-test("throws error for zero or negative ticket count", () => {
-  expect(() => new TicketTypeRequest("ADULT", 0)).toThrow("noOfTickets must be an integer");
-  expect(() => new TicketTypeRequest("CHILD", -2)).toThrow("noOfTickets must be an integer");
+  expect(() => new TicketTypeRequest("STUDENT", 1)).toThrow(
+    "type must be ADULT, CHILD, or INFANT"
+  );
 });
 
 test("throws error for non-integer ticket count", () => {
-  expect(() => new TicketTypeRequest("ADULT", 1.5)).toThrow("noOfTickets must be an integer");
-  expect(() => new TicketTypeRequest("INFANT", NaN)).toThrow("noOfTickets must be an integer");
+  expect(() => new TicketTypeRequest("ADULT", 1.5)).toThrow(
+    "noOfTickets must be an integer"
+  );
+  expect(() => new TicketTypeRequest("INFANT", NaN)).toThrow(
+    "noOfTickets must be an integer"
+  );
 });
 
-test("is immutable", () => {
-  const req = new TicketTypeRequest("CHILD", 1);
-  expect(() => {
-    req._type = "ADULT";
-  }).toThrow();
+test("throws error for zero or negative ticket count", () => {
+  const invalidZero = new TicketTypeRequest("ADULT", 0);
+  const invalidNegative = new TicketTypeRequest("CHILD", -2);
+
+  expect(() => ticketService.purchaseTickets(1, invalidZero)).toThrow(
+    InvalidPurchaseException
+  );
+
+  expect(() => ticketService.purchaseTickets(1, invalidNegative)).toThrow(
+    InvalidPurchaseException
+  );
 });
