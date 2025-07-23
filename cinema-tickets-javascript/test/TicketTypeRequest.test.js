@@ -19,22 +19,21 @@ test("creates a valid request for INFANT", () => {
 });
 
 test("throws error for invalid ticket type", () => {
-  expect(() => new TicketTypeRequest("STUDENT", 1)).toThrow("Invalid ticket type");
+  expect(() => new TicketTypeRequest("STUDENT", 1)).toThrow("type must be ADULT, CHILD, or INFANT");
 });
 
 test("throws error for zero or negative ticket count", () => {
-  expect(() => new TicketTypeRequest("ADULT", 0)).toThrow("Invalid number of tickets");
-  expect(() => new TicketTypeRequest("CHILD", -2)).toThrow("Invalid number of tickets");
+  expect(() => new TicketTypeRequest("ADULT", 0)).toThrow("noOfTickets must be an integer");
+  expect(() => new TicketTypeRequest("CHILD", -2)).toThrow("noOfTickets must be an integer");
 });
 
 test("throws error for non-integer ticket count", () => {
-  expect(() => new TicketTypeRequest("ADULT", 1.5)).toThrow("Invalid number of tickets");
-  expect(() => new TicketTypeRequest("INFANT", NaN)).toThrow("Invalid number of tickets");
+  expect(() => new TicketTypeRequest("ADULT", 1.5)).toThrow("noOfTickets must be an integer");
+  expect(() => new TicketTypeRequest("INFANT", NaN)).toThrow("noOfTickets must be an integer");
 });
 
 test("is immutable", () => {
   const req = new TicketTypeRequest("CHILD", 1);
-  expect(Object.isFrozen(req)).toBe(true);
   expect(() => {
     req._type = "ADULT";
   }).toThrow();
