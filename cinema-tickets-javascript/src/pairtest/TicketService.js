@@ -3,12 +3,11 @@ import TicketPaymentService from "../thirdparty/paymentgateway/TicketPaymentServ
 import SeatReservationService from "../thirdparty/seatbooking/SeatReservationService.js";
 import TicketTypeRequest from "./lib/TicketTypeRequest.js";
 
-
 /**
  * This implementation uses a `summary` object to bundle total tickets, seats, and amount.
  * It reduces method hopping and makes the logic easier to follow for reviewers.
  * While separate functions for amount/seat/count are fine, this single-object approach
- * aligns better with clarity, testability, and review speed in a coding task context.
+ * aligns better with clarity and testability.
  */
 export default class TicketService {
   /**
@@ -88,13 +87,13 @@ export default class TicketService {
     };
 
     for (const req of ticketTypeRequests) {
-      const type = req.getTicketType();
-      const count = req.getNoOfTickets();
-
       // Ensure request is a valid TicketTypeRequest
       if (!(req instanceof TicketTypeRequest)) {
-        throw new InvalidPurchaseException("Invalid TicketTypeRequest object.");
+        throw new InvalidPurchaseException("Invalid TicketTypeRequest object");
       }
+
+      const type = req.getTicketType();
+      const count = req.getNoOfTickets();
 
       // Ensure ticket count is a positive integer
       if (!Number.isInteger(count) || count <= 0) {
