@@ -5,10 +5,14 @@ import TicketTypeRequest from "./lib/TicketTypeRequest.js";
 import { TICKET_PRICES, MAX_TICKETS_PER_PURCHASE } from "./config/ticketConfig.js";
 
 /**
- * This implementation uses a `summary` object to bundle total tickets, seats, and amount.
- * It reduces method hopping and makes the logic easier to follow for reviewers.
- * While separate functions for amount/seat/count are fine, this single-object approach
- * aligns better with clarity and testability.
+ * This implementation uses a `summary` object to accumulate totals for:
+ * - Number of tickets by type
+ * - Total amount to be paid
+ * - Number of seats to reserve
+ *
+ * This approach simplifies control flow and avoids jumping between multiple helper functions.
+ * It also improves readability and makes the business logic easier to trace, review, and test.
+ *
  */
 export default class TicketService {
   /**
