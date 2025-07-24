@@ -2,6 +2,7 @@ import InvalidPurchaseException from "./lib/InvalidPurchaseException.js";
 import TicketPaymentService from "../thirdparty/paymentgateway/TicketPaymentService.js";
 import SeatReservationService from "../thirdparty/seatbooking/SeatReservationService.js";
 import TicketTypeRequest from "./lib/TicketTypeRequest.js";
+import { TICKET_PRICES, MAX_TICKETS_PER_PURCHASE } from "./config/ticketConfig.js";
 
 /**
  * This implementation uses a `summary` object to bundle total tickets, seats, and amount.
@@ -107,7 +108,7 @@ export default class TicketService {
 
     // Calculate totals
     const totalTickets = counts.ADULT + counts.CHILD + counts.INFANT;
-    const totalAmount = counts.ADULT * 25 + counts.CHILD * 15;
+    const totalAmount = counts.ADULT * TICKET_PRICES.ADULT + counts.CHILD * TICKET_PRICES.CHILD;
     const totalSeats = counts.ADULT + counts.CHILD;
 
     return {
@@ -127,7 +128,7 @@ export default class TicketService {
     const { ticketCounts, totalTickets } = summary;
 
     // Maximum ticket limit
-    if (totalTickets > 25) {
+    if (totalTickets > MAX_TICKETS_PER_PURCHASE) {
       throw new InvalidPurchaseException(
         "Cannot purchase more than 25 tickets."
       );
