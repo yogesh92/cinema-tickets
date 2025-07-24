@@ -7,7 +7,8 @@
   },
   "type": "module",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "coverage": "jest --coverage"
   },
   "devDependencies": {
     "@babel/cli": "^7.26.4",
