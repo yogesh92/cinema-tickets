@@ -30,6 +30,7 @@ public class TicketServiceImpl implements TicketService {
         int totalTickets = 0;
 
         for (TicketTypeRequest request : ticketTypeRequests) {
+            totalTickets += request.getNoOfTickets();
             switch (request.getTicketType()) {
                 case ADULT -> hasAdult = true;
                 case CHILD, INFANT -> hasChildOrInfant = true;
