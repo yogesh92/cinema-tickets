@@ -59,7 +59,7 @@ public class TicketServiceImpl implements TicketService {
         }
     }
 
-    private void validateTicketTypeRequests(TicketTypeRequest... ticketTypeRequests) {
+    private void validateTicketTypeRequests(final TicketTypeRequest... ticketTypeRequests) {
         if (ticketTypeRequests == null || ticketTypeRequests.length == 0) {
             throw new InvalidPurchaseException("At least one ticket type request must be provided");
         }
@@ -74,7 +74,7 @@ public class TicketServiceImpl implements TicketService {
         }
     }
 
-    private TicketTotals calculateTicketTotals(TicketTypeRequest... ticketTypeRequests) {
+    private TicketTotals calculateTicketTotals(final TicketTypeRequest... ticketTypeRequests) {
 
         int totalTickets = 0, adult = 0, child = 0, infant = 0;
 
@@ -91,7 +91,7 @@ public class TicketServiceImpl implements TicketService {
         return new TicketTotals(totalTickets, adult, child, infant);
     }
 
-    private void validateTicketTotals(TicketTotals totals) {
+    private void validateTicketTotals(final TicketTotals totals) {
 
         if (totals.totalTickets == 0) {
             throw new InvalidPurchaseException("No tickets requested");
@@ -110,12 +110,12 @@ public class TicketServiceImpl implements TicketService {
 
     }
 
-    private int calculateTotalAmount(TicketTotals totals) {
+    private int calculateTotalAmount(final TicketTotals totals) {
         return totals.totalAdultTickets * ADULT_TICKET_PRICE +
                 totals.totalChildTickets * CHILD_TICKET_PRICE;
     }
 
-    private int calculateSeatsToReserve(TicketTotals totals) {
+    private int calculateSeatsToReserve(final TicketTotals totals) {
         return totals.totalAdultTickets + totals.totalChildTickets;
     }
 

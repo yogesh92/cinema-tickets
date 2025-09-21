@@ -76,6 +76,32 @@ public class TicketServiceImplTest {
             verify(paymentService).makePayment(1L, 625);
             verify(seatService).reserveSeat(1L, 25);
         }
+
+        @Test
+        void testMaxTicketsWithMixedTypes() {
+            TicketTypeRequest adult = new TicketTypeRequest(Type.ADULT, 10);
+            TicketTypeRequest child = new TicketTypeRequest(Type.CHILD, 10);
+            TicketTypeRequest infant = new TicketTypeRequest(Type.INFANT, 5);
+
+            ticketService.purchaseTickets(1L, adult, child, infant);
+
+            verify(paymentService).makePayment(1L, 400);
+            verify(seatService).reserveSeat(1L, 20); // INFANT doesn't get a seat
+        }
+
+        @Test
+        void testMultiplePurchasesAreIndependent() {
+            TicketTypeRequest req1 = new TicketTypeRequest(Type.ADULT, 1);
+            TicketTypeRequest req2 = new TicketTypeRequest(Type.ADULT, 2);
+
+            ticketService.purchaseTickets(1L, req1);
+            ticketService.purchaseTickets(2L, req2);
+
+            verify(paymentService).makePayment(1L, 25);
+            verify(paymentService).makePayment(2L, 50);
+            verify(seatService).reserveSeat(1L, 1);
+            verify(seatService).reserveSeat(2L, 2);
+        }
     }
 
     @Nested
@@ -121,6 +147,15 @@ public class TicketServiceImplTest {
 
             assertEquals("Each infant must be accompanied by an adult. Too many infants.", exception.getMessage());
             verifyNoInteractions(paymentService, seatService);
+        }
+
+        @Test
+        void testAllTicketCountsZeroThrowsException() {
+            TicketTypeRequest adult = new TicketTypeRequest(Type.ADULT, 0);
+            TicketTypeRequest child = new TicketTypeRequest(Type.CHILD, 0);
+            TicketTypeRequest infant = new TicketTypeRequest(Type.INFANT, 0);
+
+            assertThrows(InvalidPurchaseException.class, () -> ticketService.purchaseTickets(1L, adult, child, infant));
         }
 
         @Test
