@@ -10,6 +10,7 @@ import uk.gov.dwp.uc.pairtest.domain.TicketTypeRequest;
 import uk.gov.dwp.uc.pairtest.domain.TicketTypeRequest.Type;
 import uk.gov.dwp.uc.pairtest.exception.InvalidPurchaseException;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
@@ -49,6 +50,18 @@ public class TicketServiceImplTest {
 
         verifyNoInteractions(paymentService);
         verifyNoInteractions(seatService);
+    }
+
+    @Test
+    void shouldThrowExceptionForInfantOnlyPurchase() {
+        TicketTypeRequest infantOnly = new TicketTypeRequest(TicketTypeRequest.Type.INFANT, 1);
+
+        InvalidPurchaseException exception = assertThrows(
+                InvalidPurchaseException.class,
+                () -> ticketService.purchaseTickets(1L, infantOnly));
+
+        assertEquals("Child or Infant tickets cannot be purchased without at least one Adult ticket",
+                exception.getMessage());
     }
 
     @Test

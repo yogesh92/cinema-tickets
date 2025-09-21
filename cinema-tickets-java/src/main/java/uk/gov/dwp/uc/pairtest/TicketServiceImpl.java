@@ -35,6 +35,8 @@ public class TicketServiceImpl implements TicketService {
 
         TicketTotals totals = calculateTicketTotals(ticketTypeRequests);
 
+        validateTicketTotals(totals);
+
         ticketPaymentService.makePayment(accountId, 25);
         seatReservationService.reserveSeat(accountId, 1);
 
@@ -55,6 +57,22 @@ public class TicketServiceImpl implements TicketService {
             }
         }
         return new TicketTotals(totalTickets, adult, child, infant);
+    }
+
+    private void validateTicketTotals(TicketTotals totals) {
+
+        if (totals.totalTickets == 0) {
+            throw new InvalidPurchaseException("No tickets requested");
+        }
+        if (totals.totalTickets > 25) {
+            throw new InvalidPurchaseException("Cannot purchase more than " +
+                    25 + " tickets at a time");
+        }
+        if (totals.totalAdultTickets == 0 && (totals.totalChildTickets > 0 || totals.totalInfantTickets > 0)) {
+            throw new InvalidPurchaseException(
+                    "Child or Infant tickets cannot be purchased without at least one Adult ticket");
+        }
+
     }
 
 }
