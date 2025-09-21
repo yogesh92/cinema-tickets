@@ -41,6 +41,18 @@ public class TicketServiceImplTest {
     }
 
     @Test
+    public void testValidAdultChildInfantPurchase() {
+        TicketTypeRequest adult = new TicketTypeRequest(Type.ADULT, 2); // £50
+        TicketTypeRequest child = new TicketTypeRequest(Type.CHILD, 3); // £45
+        TicketTypeRequest infant = new TicketTypeRequest(Type.INFANT, 1); // £0
+
+        ticketService.purchaseTickets(10L, adult, child, infant);
+
+        verify(paymentService).makePayment(10L, 95); // 2x25 + 3x15
+        verify(seatService).reserveSeat(10L, 5); // 2 adults + 3 children
+    }
+
+    @Test
     public void testChildTicketWithoutAdultThrowsException() {
         TicketTypeRequest child = new TicketTypeRequest(Type.CHILD, 1);
 
