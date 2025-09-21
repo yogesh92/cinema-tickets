@@ -8,7 +8,9 @@ import thirdparty.paymentgateway.TicketPaymentService;
 import thirdparty.seatbooking.SeatReservationService;
 import uk.gov.dwp.uc.pairtest.domain.TicketTypeRequest;
 import uk.gov.dwp.uc.pairtest.domain.TicketTypeRequest.Type;
+import uk.gov.dwp.uc.pairtest.exception.InvalidPurchaseException;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 public class TicketServiceImplTest {
@@ -29,14 +31,23 @@ public class TicketServiceImplTest {
 
     @Test
     public void testAdultOnlyPurchaseIsValid() {
-        // Given
         TicketTypeRequest adult = new TicketTypeRequest(Type.ADULT, 1);
 
-        // When
         ticketService.purchaseTickets(1L, adult);
 
-        // Then
         verify(paymentService).makePayment(1L, 25);
         verify(seatService).reserveSeat(1L, 1);
+    }
+
+    @Test
+    public void testChildTicketWithoutAdultThrowsException() {
+        TicketTypeRequest child = new TicketTypeRequest(Type.CHILD, 1);
+
+        assertThrows(InvalidPurchaseException.class, () -> {
+            ticketService.purchaseTickets(1L, child);
+        });
+
+        verifyNoInteractions(paymentService);
+        verifyNoInteractions(seatService);
     }
 }
