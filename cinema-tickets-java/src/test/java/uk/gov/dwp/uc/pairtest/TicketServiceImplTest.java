@@ -50,4 +50,17 @@ public class TicketServiceImplTest {
         verifyNoInteractions(paymentService);
         verifyNoInteractions(seatService);
     }
+
+    @Test
+    public void testPurchaseExceedingMax25TicketsThrowsException() {
+        TicketTypeRequest adult20 = new TicketTypeRequest(Type.ADULT, 20);
+        TicketTypeRequest child6 = new TicketTypeRequest(Type.CHILD, 6); // total = 26
+
+        assertThrows(InvalidPurchaseException.class, () -> {
+            ticketService.purchaseTickets(1L, adult20, child6);
+        });
+
+        verifyNoInteractions(paymentService);
+        verifyNoInteractions(seatService);
+    }
 }
