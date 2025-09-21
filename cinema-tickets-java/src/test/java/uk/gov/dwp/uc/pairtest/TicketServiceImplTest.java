@@ -102,4 +102,39 @@ public class TicketServiceImplTest {
         assertThrows(InvalidPurchaseException.class,
                 () -> ticketService.purchaseTickets(null, oneAdult));
     }
+
+    @Test
+    void shouldThrowExceptionWhenTicketTypeRequestsIsNull() {
+        assertThrows(InvalidPurchaseException.class,
+                () -> ticketService.purchaseTickets(1L, (TicketTypeRequest[]) null));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenTicketTypeRequestsIsEmpty() {
+        assertThrows(InvalidPurchaseException.class,
+                () -> ticketService.purchaseTickets(1L));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenTicketTypeRequestIsNull() {
+        TicketTypeRequest nullRequest = null;
+        assertThrows(InvalidPurchaseException.class,
+                () -> ticketService.purchaseTickets(1L, nullRequest));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenTicketTypeOrCountIsInvalid() {
+        TicketTypeRequest badRequest1 = new TicketTypeRequest(null, 1); // null type
+        TicketTypeRequest badRequest2 = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 0); // 0 tickets
+        TicketTypeRequest badRequest3 = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, -1); // negative
+
+        assertThrows(InvalidPurchaseException.class,
+                () -> ticketService.purchaseTickets(1L, badRequest1));
+
+        assertThrows(InvalidPurchaseException.class,
+                () -> ticketService.purchaseTickets(1L, badRequest2));
+
+        assertThrows(InvalidPurchaseException.class,
+                () -> ticketService.purchaseTickets(1L, badRequest3));
+    }
 }

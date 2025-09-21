@@ -1,5 +1,7 @@
 package uk.gov.dwp.uc.pairtest;
 
+import java.util.Arrays;
+
 import thirdparty.paymentgateway.TicketPaymentService;
 import thirdparty.seatbooking.SeatReservationService;
 import uk.gov.dwp.uc.pairtest.domain.TicketTypeRequest;
@@ -34,6 +36,7 @@ public class TicketServiceImpl implements TicketService {
             throws InvalidPurchaseException {
 
         validateAccountId(accountId);
+        validateTicketTypeRequests(ticketTypeRequests);
 
         TicketTotals totals = calculateTicketTotals(ticketTypeRequests);
         validateTicketTotals(totals);
@@ -46,6 +49,21 @@ public class TicketServiceImpl implements TicketService {
     private void validateAccountId(Long accountId) {
         if (accountId == null || accountId <= 0) {
             throw new InvalidPurchaseException("Invalid account ID: " + accountId);
+        }
+    }
+
+    private void validateTicketTypeRequests(TicketTypeRequest... ticketTypeRequests) {
+        if (ticketTypeRequests == null || ticketTypeRequests.length == 0) {
+            throw new InvalidPurchaseException("At least one ticket type request must be provided");
+        }
+
+        boolean hasInvalidRequest = Arrays.stream(ticketTypeRequests)
+                .anyMatch(request -> request == null
+                        || request.getTicketType() == null
+                        || request.getNoOfTickets() <= 0);
+
+        if (hasInvalidRequest) {
+            throw new InvalidPurchaseException("Invalid ticket type request");
         }
     }
 
