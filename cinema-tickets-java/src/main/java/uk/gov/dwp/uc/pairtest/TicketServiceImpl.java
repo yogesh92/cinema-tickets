@@ -13,6 +13,13 @@ public class TicketServiceImpl implements TicketService {
     private final TicketPaymentService ticketPaymentService;
     private final SeatReservationService seatReservationService;
 
+    private static record TicketTotals(
+            int totalTickets,
+            int totalAdultTickets,
+            int totalChildTickets,
+            int totalInfantTickets) {
+    }
+
     public TicketServiceImpl(TicketPaymentService ticketPaymentService, SeatReservationService seatReservationService) {
         if (ticketPaymentService == null || seatReservationService == null) {
             throw new IllegalArgumentException("Services cannot be null");
@@ -25,29 +32,29 @@ public class TicketServiceImpl implements TicketService {
     @Override
     public void purchaseTickets(Long accountId, TicketTypeRequest... ticketTypeRequests)
             throws InvalidPurchaseException {
-        boolean hasAdult = false;
-        boolean hasChildOrInfant = false;
-        int totalTickets = 0;
 
-        for (TicketTypeRequest request : ticketTypeRequests) {
-            totalTickets += request.getNoOfTickets();
-            switch (request.getTicketType()) {
-                case ADULT -> hasAdult = true;
-                case CHILD, INFANT -> hasChildOrInfant = true;
-            }
-        }
-
-        if (hasChildOrInfant && !hasAdult) {
-            throw new InvalidPurchaseException("Child or Infant cannot be purchased without Adult");
-        }
-
-        if (totalTickets > 25) {
-            throw new InvalidPurchaseException("Cannot purchase more than 25 tickets");
-        }
+        TicketTotals totals = calculateTicketTotals(ticketTypeRequests);
 
         ticketPaymentService.makePayment(accountId, 25);
         seatReservationService.reserveSeat(accountId, 1);
 
+    }
+
+    private TicketTotals calculateTicketTotals(TicketTypeRequest... ticketTypeRequests) {
+
+        int totalTickets = 0, adult = 0, child = 0, infant = 0;
+
+        for (TicketTypeRequest request : ticketTypeRequests) {
+            int count = request.getNoOfTickets();
+            totalTickets += count;
+
+            switch (request.getTicketType()) {
+                case ADULT -> adult += count;
+                case CHILD -> child += count;
+                case INFANT -> infant += count;
+            }
+        }
+        return new TicketTotals(totalTickets, adult, child, infant);
     }
 
 }
