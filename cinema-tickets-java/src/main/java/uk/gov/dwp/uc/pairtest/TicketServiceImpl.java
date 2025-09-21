@@ -22,6 +22,10 @@ public class TicketServiceImpl implements TicketService {
             int totalInfantTickets) {
     }
 
+    private static final int MAX_TICKETS = 25;
+    private static final int ADULT_TICKET_PRICE = 25;
+    private static final int CHILD_TICKET_PRICE = 15;
+
     public TicketServiceImpl(TicketPaymentService ticketPaymentService, SeatReservationService seatReservationService) {
         if (ticketPaymentService == null || seatReservationService == null) {
             throw new IllegalArgumentException("Services cannot be null");
@@ -89,9 +93,9 @@ public class TicketServiceImpl implements TicketService {
         if (totals.totalTickets == 0) {
             throw new InvalidPurchaseException("No tickets requested");
         }
-        if (totals.totalTickets > 25) {
+        if (totals.totalTickets > MAX_TICKETS) {
             throw new InvalidPurchaseException("Cannot purchase more than " +
-                    25 + " tickets at a time");
+                    MAX_TICKETS + " tickets at a time");
         }
         if (totals.totalAdultTickets == 0 && (totals.totalChildTickets > 0 || totals.totalInfantTickets > 0)) {
             throw new InvalidPurchaseException(
