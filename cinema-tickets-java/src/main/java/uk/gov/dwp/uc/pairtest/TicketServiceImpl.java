@@ -27,6 +27,7 @@ public class TicketServiceImpl implements TicketService {
             throws InvalidPurchaseException {
         boolean hasAdult = false;
         boolean hasChildOrInfant = false;
+        int totalTickets = 0;
 
         for (TicketTypeRequest request : ticketTypeRequests) {
             switch (request.getTicketType()) {
@@ -37,6 +38,10 @@ public class TicketServiceImpl implements TicketService {
 
         if (hasChildOrInfant && !hasAdult) {
             throw new InvalidPurchaseException("Child or Infant cannot be purchased without Adult");
+        }
+
+        if (totalTickets > 25) {
+            throw new InvalidPurchaseException("Cannot purchase more than 25 tickets");
         }
 
         ticketPaymentService.makePayment(accountId, 25);
