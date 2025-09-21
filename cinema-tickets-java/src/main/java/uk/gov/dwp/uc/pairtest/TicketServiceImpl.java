@@ -25,6 +25,20 @@ public class TicketServiceImpl implements TicketService {
     @Override
     public void purchaseTickets(Long accountId, TicketTypeRequest... ticketTypeRequests)
             throws InvalidPurchaseException {
+        boolean hasAdult = false;
+        boolean hasChildOrInfant = false;
+
+        for (TicketTypeRequest request : ticketTypeRequests) {
+            switch (request.getTicketType()) {
+                case ADULT -> hasAdult = true;
+                case CHILD, INFANT -> hasChildOrInfant = true;
+            }
+        }
+
+        if (hasChildOrInfant && !hasAdult) {
+            throw new InvalidPurchaseException("Child or Infant cannot be purchased without Adult");
+        }
+
         ticketPaymentService.makePayment(accountId, 25);
         seatReservationService.reserveSeat(accountId, 1);
 
