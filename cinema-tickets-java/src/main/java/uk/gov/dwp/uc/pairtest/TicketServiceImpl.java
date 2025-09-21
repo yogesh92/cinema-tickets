@@ -1,6 +1,7 @@
 package uk.gov.dwp.uc.pairtest;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 import thirdparty.paymentgateway.TicketPaymentService;
 import thirdparty.seatbooking.SeatReservationService;
@@ -27,11 +28,10 @@ public class TicketServiceImpl implements TicketService {
     private static final int CHILD_TICKET_PRICE = 15;
 
     public TicketServiceImpl(TicketPaymentService ticketPaymentService, SeatReservationService seatReservationService) {
-        if (ticketPaymentService == null || seatReservationService == null) {
-            throw new IllegalArgumentException("Services cannot be null");
-        }
-        this.ticketPaymentService = ticketPaymentService;
-        this.seatReservationService = seatReservationService;
+        this.ticketPaymentService = Objects.requireNonNull(ticketPaymentService,
+                "ticketPaymentService must not be null");
+        this.seatReservationService = Objects.requireNonNull(seatReservationService,
+                "seatReservationService must not be null");
 
     }
 
