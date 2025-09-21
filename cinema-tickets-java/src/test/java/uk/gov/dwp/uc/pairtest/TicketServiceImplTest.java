@@ -53,6 +53,15 @@ public class TicketServiceImplTest {
     }
 
     @Test
+    public void testAggregateAdultRequests() {
+        TicketTypeRequest adult1 = new TicketTypeRequest(Type.ADULT, 2);
+        TicketTypeRequest adult2 = new TicketTypeRequest(Type.ADULT, 3);
+        ticketService.purchaseTickets(1L, adult1, adult2);
+        verify(paymentService).makePayment(1L, 5 * 25);
+        verify(seatService).reserveSeat(1L, 5);
+    }
+
+    @Test
     public void testChildTicketWithoutAdultThrowsException() {
         TicketTypeRequest child = new TicketTypeRequest(Type.CHILD, 1);
 
@@ -148,5 +157,13 @@ public class TicketServiceImplTest {
 
         assertThrows(InvalidPurchaseException.class,
                 () -> ticketService.purchaseTickets(1L, badRequest3));
+    }
+
+    @Test
+    void shouldAllowPurchaseWithExactly25Tickets() {
+        TicketTypeRequest request = new TicketTypeRequest(Type.ADULT, 25);
+        ticketService.purchaseTickets(1L, request);
+        verify(paymentService).makePayment(1L, 25 * 25);
+        verify(seatService).reserveSeat(1L, 25);
     }
 }
