@@ -45,8 +45,11 @@ public class TicketServiceImpl implements TicketService {
         TicketTotals totals = calculateTicketTotals(ticketTypeRequests);
         validateTicketTotals(totals);
 
-        ticketPaymentService.makePayment(accountId, 25);
-        seatReservationService.reserveSeat(accountId, 1);
+        int totalAmountToPay = calculateTotalAmount(totals);
+        int totalSeatsToReserve = calculateSeatsToReserve(totals);
+
+        ticketPaymentService.makePayment(accountId, totalAmountToPay);
+        seatReservationService.reserveSeat(accountId, totalSeatsToReserve);
 
     }
 
@@ -105,6 +108,15 @@ public class TicketServiceImpl implements TicketService {
             throw new InvalidPurchaseException("Each infant must be accompanied by an adult. Too many infants.");
         }
 
+    }
+
+    private int calculateTotalAmount(TicketTotals totals) {
+        return totals.totalAdultTickets * ADULT_TICKET_PRICE +
+                totals.totalChildTickets * CHILD_TICKET_PRICE;
+    }
+
+    private int calculateSeatsToReserve(TicketTotals totals) {
+        return totals.totalAdultTickets + totals.totalChildTickets;
     }
 
 }
