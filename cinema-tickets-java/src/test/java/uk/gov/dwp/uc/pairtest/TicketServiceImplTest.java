@@ -1,6 +1,8 @@
 package uk.gov.dwp.uc.pairtest;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -10,10 +12,10 @@ import uk.gov.dwp.uc.pairtest.domain.TicketTypeRequest;
 import uk.gov.dwp.uc.pairtest.domain.TicketTypeRequest.Type;
 import uk.gov.dwp.uc.pairtest.exception.InvalidPurchaseException;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@DisplayName("TicketServiceImplTest")
 public class TicketServiceImplTest {
 
     @Mock
@@ -25,145 +27,137 @@ public class TicketServiceImplTest {
     private TicketService ticketService;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         MockitoAnnotations.openMocks(this);
         ticketService = new TicketServiceImpl(paymentService, seatService);
     }
 
-    @Test
-    public void testAdultOnlyPurchaseIsValid() {
-        TicketTypeRequest adult = new TicketTypeRequest(Type.ADULT, 1);
+    @Nested
+    @DisplayName("Valid Purchase Scenarios")
+    class ValidPurchases {
 
-        ticketService.purchaseTickets(1L, adult);
+        @Test
+        void testAdultOnlyPurchaseIsValid() {
+            TicketTypeRequest adult = new TicketTypeRequest(Type.ADULT, 1);
+            ticketService.purchaseTickets(1L, adult);
 
-        verify(paymentService).makePayment(1L, 25);
-        verify(seatService).reserveSeat(1L, 1);
+            verify(paymentService).makePayment(1L, 25);
+            verify(seatService).reserveSeat(1L, 1);
+        }
+
+        @Test
+        void testValidAdultChildInfantPurchase() {
+            TicketTypeRequest adult = new TicketTypeRequest(Type.ADULT, 2);
+            TicketTypeRequest child = new TicketTypeRequest(Type.CHILD, 3);
+            TicketTypeRequest infant = new TicketTypeRequest(Type.INFANT, 1);
+
+            ticketService.purchaseTickets(10L, adult, child, infant);
+
+            verify(paymentService).makePayment(10L, 95);
+            verify(seatService).reserveSeat(10L, 5);
+        }
+
+        @Test
+        void testAggregateAdultRequests() {
+            TicketTypeRequest req1 = new TicketTypeRequest(Type.ADULT, 2);
+            TicketTypeRequest req2 = new TicketTypeRequest(Type.ADULT, 3);
+
+            ticketService.purchaseTickets(1L, req1, req2);
+
+            verify(paymentService).makePayment(1L, 125);
+            verify(seatService).reserveSeat(1L, 5);
+        }
+
+        @Test
+        void testPurchaseWithExactly25Tickets() {
+            TicketTypeRequest request = new TicketTypeRequest(Type.ADULT, 25);
+            ticketService.purchaseTickets(1L, request);
+
+            verify(paymentService).makePayment(1L, 625);
+            verify(seatService).reserveSeat(1L, 25);
+        }
     }
 
-    @Test
-    public void testValidAdultChildInfantPurchase() {
-        TicketTypeRequest adult = new TicketTypeRequest(Type.ADULT, 2); // £50
-        TicketTypeRequest child = new TicketTypeRequest(Type.CHILD, 3); // £45
-        TicketTypeRequest infant = new TicketTypeRequest(Type.INFANT, 1); // £0
+    @Nested
+    @DisplayName("Invalid Purchase Scenarios")
+    class InvalidPurchases {
 
-        ticketService.purchaseTickets(10L, adult, child, infant);
+        @Test
+        void testChildTicketWithoutAdultThrowsException() {
+            TicketTypeRequest child = new TicketTypeRequest(Type.CHILD, 1);
 
-        verify(paymentService).makePayment(10L, 95); // 2x25 + 3x15
-        verify(seatService).reserveSeat(10L, 5); // 2 adults + 3 children
-    }
+            assertThrows(InvalidPurchaseException.class, () -> ticketService.purchaseTickets(1L, child));
+            verifyNoInteractions(paymentService, seatService);
+        }
 
-    @Test
-    public void testAggregateAdultRequests() {
-        TicketTypeRequest adult1 = new TicketTypeRequest(Type.ADULT, 2);
-        TicketTypeRequest adult2 = new TicketTypeRequest(Type.ADULT, 3);
-        ticketService.purchaseTickets(1L, adult1, adult2);
-        verify(paymentService).makePayment(1L, 5 * 25);
-        verify(seatService).reserveSeat(1L, 5);
-    }
+        @Test
+        void testInfantOnlyPurchaseThrowsException() {
+            TicketTypeRequest infantOnly = new TicketTypeRequest(Type.INFANT, 1);
 
-    @Test
-    public void testChildTicketWithoutAdultThrowsException() {
-        TicketTypeRequest child = new TicketTypeRequest(Type.CHILD, 1);
+            InvalidPurchaseException exception = assertThrows(InvalidPurchaseException.class,
+                    () -> ticketService.purchaseTickets(1L, infantOnly));
 
-        assertThrows(InvalidPurchaseException.class, () -> {
-            ticketService.purchaseTickets(1L, child);
-        });
+            assertEquals("Child or Infant tickets cannot be purchased without at least one Adult ticket",
+                    exception.getMessage());
+            verifyNoInteractions(paymentService, seatService);
+        }
 
-        verifyNoInteractions(paymentService);
-        verifyNoInteractions(seatService);
-    }
+        @Test
+        void testPurchaseExceedingMax25TicketsThrowsException() {
+            TicketTypeRequest adult20 = new TicketTypeRequest(Type.ADULT, 20);
+            TicketTypeRequest child6 = new TicketTypeRequest(Type.CHILD, 6);
 
-    @Test
-    void shouldThrowExceptionForInfantOnlyPurchase() {
-        TicketTypeRequest infantOnly = new TicketTypeRequest(TicketTypeRequest.Type.INFANT, 1);
+            assertThrows(InvalidPurchaseException.class, () -> ticketService.purchaseTickets(1L, adult20, child6));
+            verifyNoInteractions(paymentService, seatService);
+        }
 
-        InvalidPurchaseException exception = assertThrows(
-                InvalidPurchaseException.class,
-                () -> ticketService.purchaseTickets(1L, infantOnly));
+        @Test
+        void testMoreInfantsThanAdultsThrowsException() {
+            TicketTypeRequest oneAdult = new TicketTypeRequest(Type.ADULT, 1);
+            TicketTypeRequest twoInfants = new TicketTypeRequest(Type.INFANT, 2);
 
-        assertEquals("Child or Infant tickets cannot be purchased without at least one Adult ticket",
-                exception.getMessage());
-    }
+            InvalidPurchaseException exception = assertThrows(InvalidPurchaseException.class,
+                    () -> ticketService.purchaseTickets(1L, oneAdult, twoInfants));
 
-    @Test
-    public void testPurchaseExceedingMax25TicketsThrowsException() {
-        TicketTypeRequest adult20 = new TicketTypeRequest(Type.ADULT, 20);
-        TicketTypeRequest child6 = new TicketTypeRequest(Type.CHILD, 6); // total = 26
+            assertEquals("Each infant must be accompanied by an adult. Too many infants.", exception.getMessage());
+            verifyNoInteractions(paymentService, seatService);
+        }
 
-        assertThrows(InvalidPurchaseException.class, () -> {
-            ticketService.purchaseTickets(1L, adult20, child6);
-        });
+        @Test
+        void testInvalidAccountIdThrowsException() {
+            TicketTypeRequest oneAdult = new TicketTypeRequest(Type.ADULT, 1);
 
-        verifyNoInteractions(paymentService);
-        verifyNoInteractions(seatService);
-    }
+            assertThrows(InvalidPurchaseException.class, () -> ticketService.purchaseTickets(0L, oneAdult));
+            assertThrows(InvalidPurchaseException.class, () -> ticketService.purchaseTickets(-5L, oneAdult));
+            assertThrows(InvalidPurchaseException.class, () -> ticketService.purchaseTickets(null, oneAdult));
+        }
 
-    @Test
-    public void shouldThrowExceptionWhenMoreInfantsThanAdults() {
-        TicketTypeRequest oneAdult = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 1);
-        TicketTypeRequest twoInfants = new TicketTypeRequest(TicketTypeRequest.Type.INFANT, 2);
+        @Test
+        void testNullTicketRequestsThrowsException() {
+            assertThrows(InvalidPurchaseException.class,
+                    () -> ticketService.purchaseTickets(1L, (TicketTypeRequest[]) null));
+        }
 
-        InvalidPurchaseException exception = assertThrows(
-                InvalidPurchaseException.class,
-                () -> ticketService.purchaseTickets(1L, oneAdult, twoInfants));
+        @Test
+        void testEmptyTicketRequestsThrowsException() {
+            assertThrows(InvalidPurchaseException.class, () -> ticketService.purchaseTickets(1L));
+        }
 
-        assertEquals("Each infant must be accompanied by an adult. Too many infants.", exception.getMessage());
-    }
+        @Test
+        void testNullTicketRequestInArrayThrowsException() {
+            TicketTypeRequest nullRequest = null;
+            assertThrows(InvalidPurchaseException.class, () -> ticketService.purchaseTickets(1L, nullRequest));
+        }
 
-    @Test
-    void shouldThrowExceptionForInvalidAccountId() {
-        TicketTypeRequest oneAdult = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 1);
+        @Test
+        void testInvalidTicketTypeOrCountThrowsException() {
+            TicketTypeRequest badRequest1 = new TicketTypeRequest(null, 1);
+            TicketTypeRequest badRequest2 = new TicketTypeRequest(Type.ADULT, 0);
+            TicketTypeRequest badRequest3 = new TicketTypeRequest(Type.ADULT, -1);
 
-        assertThrows(InvalidPurchaseException.class,
-                () -> ticketService.purchaseTickets(0L, oneAdult));
-
-        assertThrows(InvalidPurchaseException.class,
-                () -> ticketService.purchaseTickets(-5L, oneAdult));
-
-        assertThrows(InvalidPurchaseException.class,
-                () -> ticketService.purchaseTickets(null, oneAdult));
-    }
-
-    @Test
-    void shouldThrowExceptionWhenTicketTypeRequestsIsNull() {
-        assertThrows(InvalidPurchaseException.class,
-                () -> ticketService.purchaseTickets(1L, (TicketTypeRequest[]) null));
-    }
-
-    @Test
-    void shouldThrowExceptionWhenTicketTypeRequestsIsEmpty() {
-        assertThrows(InvalidPurchaseException.class,
-                () -> ticketService.purchaseTickets(1L));
-    }
-
-    @Test
-    void shouldThrowExceptionWhenTicketTypeRequestIsNull() {
-        TicketTypeRequest nullRequest = null;
-        assertThrows(InvalidPurchaseException.class,
-                () -> ticketService.purchaseTickets(1L, nullRequest));
-    }
-
-    @Test
-    void shouldThrowExceptionWhenTicketTypeOrCountIsInvalid() {
-        TicketTypeRequest badRequest1 = new TicketTypeRequest(null, 1); // null type
-        TicketTypeRequest badRequest2 = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 0); // 0 tickets
-        TicketTypeRequest badRequest3 = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, -1); // negative
-
-        assertThrows(InvalidPurchaseException.class,
-                () -> ticketService.purchaseTickets(1L, badRequest1));
-
-        assertThrows(InvalidPurchaseException.class,
-                () -> ticketService.purchaseTickets(1L, badRequest2));
-
-        assertThrows(InvalidPurchaseException.class,
-                () -> ticketService.purchaseTickets(1L, badRequest3));
-    }
-
-    @Test
-    void shouldAllowPurchaseWithExactly25Tickets() {
-        TicketTypeRequest request = new TicketTypeRequest(Type.ADULT, 25);
-        ticketService.purchaseTickets(1L, request);
-        verify(paymentService).makePayment(1L, 25 * 25);
-        verify(seatService).reserveSeat(1L, 25);
+            assertThrows(InvalidPurchaseException.class, () -> ticketService.purchaseTickets(1L, badRequest1));
+            assertThrows(InvalidPurchaseException.class, () -> ticketService.purchaseTickets(1L, badRequest2));
+            assertThrows(InvalidPurchaseException.class, () -> ticketService.purchaseTickets(1L, badRequest3));
+        }
     }
 }
