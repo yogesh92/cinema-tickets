@@ -48,8 +48,8 @@ public class TicketServiceImpl implements TicketService {
         int totalAmountToPay = calculateTotalAmount(totals);
         int totalSeatsToReserve = calculateSeatsToReserve(totals);
 
-        ticketPaymentService.makePayment(accountId, totalAmountToPay);
         seatReservationService.reserveSeat(accountId, totalSeatsToReserve);
+        ticketPaymentService.makePayment(accountId, totalAmountToPay);
 
     }
 

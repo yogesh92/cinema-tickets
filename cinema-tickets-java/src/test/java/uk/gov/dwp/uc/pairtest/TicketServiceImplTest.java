@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import thirdparty.paymentgateway.TicketPaymentService;
@@ -101,6 +102,16 @@ public class TicketServiceImplTest {
             verify(paymentService).makePayment(2L, 50);
             verify(seatService).reserveSeat(1L, 1);
             verify(seatService).reserveSeat(2L, 2);
+        }
+
+        @Test
+        void testServiceCallOrder() {
+            TicketTypeRequest adult = new TicketTypeRequest(Type.ADULT, 2);
+            ticketService.purchaseTickets(1L, adult);
+
+            InOrder inOrder = inOrder(seatService, paymentService);
+            inOrder.verify(seatService).reserveSeat(1L, 2);
+            inOrder.verify(paymentService).makePayment(1L, 50);
         }
     }
 
