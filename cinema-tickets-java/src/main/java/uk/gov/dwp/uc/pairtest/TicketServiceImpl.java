@@ -33,13 +33,20 @@ public class TicketServiceImpl implements TicketService {
     public void purchaseTickets(Long accountId, TicketTypeRequest... ticketTypeRequests)
             throws InvalidPurchaseException {
 
-        TicketTotals totals = calculateTicketTotals(ticketTypeRequests);
+        validateAccountId(accountId);
 
+        TicketTotals totals = calculateTicketTotals(ticketTypeRequests);
         validateTicketTotals(totals);
 
         ticketPaymentService.makePayment(accountId, 25);
         seatReservationService.reserveSeat(accountId, 1);
 
+    }
+
+    private void validateAccountId(Long accountId) {
+        if (accountId == null || accountId <= 0) {
+            throw new InvalidPurchaseException("Invalid account ID: " + accountId);
+        }
     }
 
     private TicketTotals calculateTicketTotals(TicketTypeRequest... ticketTypeRequests) {

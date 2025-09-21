@@ -88,4 +88,18 @@ public class TicketServiceImplTest {
 
         assertEquals("Each infant must be accompanied by an adult. Too many infants.", exception.getMessage());
     }
+
+    @Test
+    void shouldThrowExceptionForInvalidAccountId() {
+        TicketTypeRequest oneAdult = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 1);
+
+        assertThrows(InvalidPurchaseException.class,
+                () -> ticketService.purchaseTickets(0L, oneAdult));
+
+        assertThrows(InvalidPurchaseException.class,
+                () -> ticketService.purchaseTickets(-5L, oneAdult));
+
+        assertThrows(InvalidPurchaseException.class,
+                () -> ticketService.purchaseTickets(null, oneAdult));
+    }
 }
