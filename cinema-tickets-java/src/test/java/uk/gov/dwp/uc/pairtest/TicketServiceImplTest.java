@@ -76,4 +76,16 @@ public class TicketServiceImplTest {
         verifyNoInteractions(paymentService);
         verifyNoInteractions(seatService);
     }
+
+    @Test
+    public void shouldThrowExceptionWhenMoreInfantsThanAdults() {
+        TicketTypeRequest oneAdult = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 1);
+        TicketTypeRequest twoInfants = new TicketTypeRequest(TicketTypeRequest.Type.INFANT, 2);
+
+        InvalidPurchaseException exception = assertThrows(
+                InvalidPurchaseException.class,
+                () -> ticketService.purchaseTickets(1L, oneAdult, twoInfants));
+
+        assertEquals("Each infant must be accompanied by an adult. Too many infants.", exception.getMessage());
+    }
 }

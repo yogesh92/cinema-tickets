@@ -72,6 +72,9 @@ public class TicketServiceImpl implements TicketService {
             throw new InvalidPurchaseException(
                     "Child or Infant tickets cannot be purchased without at least one Adult ticket");
         }
+        if (totals.totalInfantTickets > totals.totalAdultTickets) {
+            throw new InvalidPurchaseException("Each infant must be accompanied by an adult. Too many infants.");
+        }
 
     }
 
